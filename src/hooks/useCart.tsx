@@ -50,21 +50,25 @@ function CartProvider({ children }: CartProviderProps): JSX.Element {
 
   const updateSuccess = useCallback(
     async (id, stock) => {
-      const newCart = cart;
+      try {
+        const newCart = cart;
 
-      const productIndex = newCart.findIndex((p) => p.id === id);
+        const productIndex = newCart.findIndex((p) => p.id === id);
 
-      if (productIndex >= 0) {
-        if (Number(newCart[productIndex].amount) < Number(stock)) {
-          toast.success("Produto adicionado ao carrinho com sucesso!");
-        } else {
-          toast.success("Produto removido do carrinho com sucesso!");
+        if (productIndex >= 0) {
+          if (Number(newCart[productIndex].amount) < Number(stock)) {
+            toast.success("Produto adicionado ao carrinho com sucesso!");
+          } else {
+            toast.success("Produto removido do carrinho com sucesso!");
+          }
+
+          newCart[productIndex].amount = Number(stock);
+
+          setCart([...newCart]);
+          localStorage.setItem("@RocketShoes:cart", JSON.stringify(newCart));
         }
-
-        newCart[productIndex].amount = Number(stock);
-
-        setCart([...newCart]);
-        localStorage.setItem("@RocketShoes:cart", JSON.stringify(newCart));
+      } catch (error) {
+        toast.error("Erro na alteração de quantidade do produto");
       }
     },
     [cart]
@@ -73,15 +77,16 @@ function CartProvider({ children }: CartProviderProps): JSX.Element {
   const updateProductAmount = useCallback(
     async ({ productId, amount }: UpdateProductAmount) => {
       try {
-        if (amount <= 1) {
+      
+        if (amount < 1) {
           toast.error("Erro na alteração de quantidade do produto");
           return;
         }
 
         const response = await api.get(`/stock/${productId}`);
         const productAmount = response.data.amount;
-      
-        if (Number(amount) > Number(productAmount)) {
+
+        if (amount > Number(productAmount)) {
           toast.error("Quantidade solicitada fora de estoque");
           return;
         }
